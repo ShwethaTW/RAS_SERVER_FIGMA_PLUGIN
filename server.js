@@ -18,7 +18,7 @@ const openai = new OpenAI({
 
 // Constants
 const EMBEDDING_PATH = path.join(__dirname, 'embedding.json');
-const EMBEDDING_URL = 'https://drive.google.com/uc?export=download&id=1TitJ0YyFlFlhLIWX5oyUEvanC3c1kHCe';
+const EMBEDDING_URL = 'https://www.dropbox.com/scl/fi/pqruumeqfumfo6fiddd97/embeddings.json?rlkey=tr4swi2ginnqj3tkeknn3gth5&st=7oq1zh0j&dl=1';
 let embeddings = [];
 
 // Cosine similarity function
