@@ -49,7 +49,8 @@ app.post('/get-suggestions', async (req, res) => {
     const topMatches = [];
 
     const response = await fetch(EMBEDDING_URL);
-    if (!response.ok) throw new Error(Download failed: ${response.statusText});
+    if (!response.ok) throw new Error(`Download failed: ${response.statusText}`);
+  
 
     const pipeline = chain([
       response.body,
@@ -72,20 +73,20 @@ app.post('/get-suggestions', async (req, res) => {
     const reuseSuggestions = topMatches.map(match => match.line);
 
     // Get new suggestions from OpenAI
-    const systemPrompt = You are a product copywriting assistant for Kissflow.
+const systemPrompt = `You are a product copywriting assistant for Kissflow.
 
 Follow the complete style guide below. Every output MUST comply with all writing rules.
 
 === STYLE GUIDE ===
 ${styleGuideText}
-=====================;
+=====================`; 
 
-    const userPrompt = Rewrite this UI copy:
+const userPrompt = `Rewrite this UI copy:
 
 - Text: "${nodeText}"
 - Spec: "${extraContext || "none"}"
 
-Give 10 concise, well-formatted rewrite options.;
+Give 10 concise, well-formatted rewrite options.`; 
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
