@@ -99,8 +99,7 @@ Give 10 concise, well-formatted rewrite options.`;
 
     const newSuggestions = (completion.choices[0].message.content || '')
       .split('\n')
-      .filter(line => line.trim() && !line.startsWith("
-"))
+      .filter(line => line.trim() && !line.startsWith("```"))
       .map(line => line.replace(/^\d+[\.)]\s*/, '').trim())
       .slice(0, 10);
 
