@@ -10,7 +10,7 @@ require('dotenv').config();
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '1mb' }));
 
 // OpenAI client (v4 syntax)
 const openai = new OpenAI({
