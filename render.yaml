@@ -10,5 +10,5 @@ services:
         sync: false
       - key: PINECONE_API_KEY
         sync: false
-      - key: PINECONE_ENVIRONMENT
+      - key: PINECONE_HOST
         sync: false
