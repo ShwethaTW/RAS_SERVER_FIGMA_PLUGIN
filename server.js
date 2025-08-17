@@ -17,7 +17,7 @@ const openai = new OpenAI({
 // Pinecone client
 const pc = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
-  host: process.env.PINECONE_HOST,
+  environment: process.env.PINECONE_ENVIRONMENT,
 });
 
 // reference your index
