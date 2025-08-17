@@ -2,30 +2,25 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const OpenAI = require('openai');
-const { chain } = require('stream-chain');
-const { parser } = require('stream-json');
-const { streamArray } = require('stream-json/streamers/StreamArray');
-const fetch = require('node-fetch');
+const { Pinecone } = require('@pinecone-database/pinecone');
 require('dotenv').config();
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json({ limit: '1mb' }));
 
-// OpenAI client (v4 syntax)
+// OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const EMBEDDING_URL = 'https://www.dropbox.com/scl/fi/pqruumeqfumfo6fiddd97/embeddings.json?rlkey=tr4swi2ginnqj3tkeknn3gth5&st=7oq1zh0j&dl=1';
+// Pinecone client
+const pc = new Pinecone({
+  apiKey: process.env.PINECONE_API_KEY,
+});
 
-// Cosine similarity function
-function cosineSimilarity(a, b) {
-  const dot = a.reduce((sum, val, i) => sum + val * b[i], 0);
-  const magA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
-  const magB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
-  return dot / (magA * magB);
-}
+// reference your index
+const index = pc.index("figma-plugin");
 
 // Get OpenAI embedding
 async function getEmbedding(text) {
@@ -45,35 +40,22 @@ app.post('/get-suggestions', async (req, res) => {
   }
 
   try {
+    // 1️⃣ Embed the node text
     const nodeEmbedding = await getEmbedding(nodeText);
-    const topMatches = [];
 
-    const response = await fetch(EMBEDDING_URL);
-    if (!response.ok) throw new Error(`Download failed: ${response.statusText}`);
-  
+    // 2️⃣ Query Pinecone for similar lines
+    const queryResponse = await index.query({
+      vector: nodeEmbedding,
+      topK: 10,
+      includeMetadata: true, // we stored "line" as metadata
+    });
 
-    const pipeline = chain([
-      response.body,
-      parser(),
-      streamArray()
-    ]);
+    const reuseSuggestions = queryResponse.matches
+      .map(match => match.metadata?.line)
+      .filter(Boolean);
 
-    for await (const { value } of pipeline) {
-      const similarity = cosineSimilarity(nodeEmbedding, value.embedding);
-
-      if (topMatches.length < 10) {
-        topMatches.push({ line: value.line, score: similarity });
-        topMatches.sort((a, b) => b.score - a.score);
-      } else if (similarity > topMatches[9].score) {
-        topMatches[9] = { line: value.line, score: similarity };
-        topMatches.sort((a, b) => b.score - a.score);
-      }
-    }
-
-    const reuseSuggestions = topMatches.map(match => match.line);
-
-    // Get new suggestions from OpenAI
-const systemPrompt = `You are a product copywriting assistant for Kissflow.
+    // 3️⃣ Get new suggestions from OpenAI
+    const systemPrompt = `You are a product copywriting assistant for Kissflow.
 
 Follow the complete style guide below. Every output MUST comply with all writing rules.
 
@@ -81,7 +63,7 @@ Follow the complete style guide below. Every output MUST comply with all writing
 ${styleGuideText}
 =====================`; 
 
-const userPrompt = `Rewrite this UI copy:
+    const userPrompt = `Rewrite this UI copy:
 
 - Text: "${nodeText}"
 - Spec: "${extraContext || "none"}"
@@ -103,6 +85,7 @@ Give 10 concise, well-formatted rewrite options.`;
       .map(line => line.replace(/^\d+[\.)]\s*/, '').trim())
       .slice(0, 10);
 
+    // 4️⃣ Return both reuse + new suggestions
     res.json({ reuseSuggestions, newSuggestions });
 
   } catch (error) {
