@@ -12,12 +12,12 @@ app.use(bodyParser.json({ limit: '1mb' }));
 // OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  environment: process.env.PINECONE_ENVIRONMENT, 
 });
 
 // Pinecone client
 const pc = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
+  environment: process.env.PINECONE_ENVIRONMENT, 
 });
 
 // reference your index
