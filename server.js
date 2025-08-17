@@ -51,7 +51,7 @@ app.post('/get-suggestions', async (req, res) => {
     });
 
     const reuseSuggestions = queryResponse.matches
-      .map(match => match.metadata?.line)
+      .map(match => match.metadata?.text)
       .filter(Boolean);
 
     // 3️⃣ Get new suggestions from OpenAI
