@@ -12,6 +12,7 @@ app.use(bodyParser.json({ limit: '1mb' }));
 // OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  environment: process.env.PINECONE_ENVIRONMENT, 
 });
 
 // Pinecone client
