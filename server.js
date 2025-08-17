@@ -21,7 +21,7 @@ const pc = new Pinecone({
 });
 
 // reference your index
-const index = pc.index("figmaplugin");
+const index = pc.index("figmaplugin", process.env.PINECONE_HOST);
 
 // Get OpenAI embedding
 async function getEmbedding(text) {
