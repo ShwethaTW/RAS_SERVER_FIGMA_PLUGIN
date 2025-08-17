@@ -17,11 +17,10 @@ const openai = new OpenAI({
 // Pinecone client
 const pc = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
-  environment: process.env.PINECONE_ENVIRONMENT,
 });
 
 // reference your index
-const index = pc.index("figmaplugin");
+const index = pc.Index(process.env.PINECONE_HOST);
 
 // Get OpenAI embedding
 async function getEmbedding(text) {
