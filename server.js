@@ -74,8 +74,7 @@ Follow the complete style guide below. Every output MUST comply with all writing
 ${styleGuideText}
 =====================`; 
 
-    const userPrompt = `Rewrite ${nodeText} UI copy using the context given in ${extraContext}.
-
+    const userPrompt = `Rewrite ${nodeText} UI copy. If ${extraContext} has information use that intelligence too to provide relevant copy suggestion. 
 Give 10 concise, well-formatted rewrite options.`; 
 
     const completion = await openai.chat.completions.create({
