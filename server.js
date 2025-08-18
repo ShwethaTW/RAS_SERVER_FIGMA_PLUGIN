@@ -74,10 +74,7 @@ Follow the complete style guide below. Every output MUST comply with all writing
 ${styleGuideText}
 =====================`; 
 
-    const userPrompt = `Rewrite this UI copy:
-
-- Text: "${nodeText}"
-- Spec: "${extraContext || "none"}"
+    const userPrompt = `Rewrite ${nodeText} UI copy using the context given in ${extraContext}.
 
 Give 10 concise, well-formatted rewrite options.`; 
 
