@@ -22,6 +22,17 @@ const pc = new Pinecone({
 // reference your index
 const index = pc.index("figmaplugin");
 
+// 🧹 Utility function to clean text
+function cleanText(text) {
+  if (!text) return null;
+  return text
+    .replace(/^\d+[\.)]\s*/, '')     // remove leading numbers like 1. or 1)
+    .replace(/^[-*]\s*/, '')         // remove bullets (- or *)
+    .replace(/^["']|["']$/g, '')     // strip wrapping quotes
+    .trim();
+}
+
+
 // Get OpenAI embedding
 async function getEmbedding(text) {
   const result = await openai.embeddings.create({
@@ -51,7 +62,7 @@ app.post('/get-suggestions', async (req, res) => {
     });
 
     const reuseSuggestions = queryResponse.matches
-      .map(match => match.metadata?.text)
+      .map(match => cleanText(match.metadata?.text))
       .filter(Boolean);
 
     // 3️⃣ Get new suggestions from OpenAI
@@ -81,8 +92,8 @@ Give 10 concise, well-formatted rewrite options.`;
 
     const newSuggestions = (completion.choices[0].message.content || '')
       .split('\n')
-      .filter(line => line.trim() && !line.startsWith("```"))
-      .map(line => line.replace(/^\d+[\.)]\s*/, '').trim())
+      .map(cleanText)
+      .filter(Boolean)
       .slice(0, 10);
 
     // 4️⃣ Return both reuse + new suggestions
