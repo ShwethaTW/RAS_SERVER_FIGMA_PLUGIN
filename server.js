@@ -32,18 +32,27 @@ function cleanText(text) {
     .trim();
 }
 
-
 // Get OpenAI embedding
 async function getEmbedding(text) {
+  console.log(`[${new Date().toISOString()}] 🔹 Getting embedding for text...`);
+  const start = Date.now();
   const result = await openai.embeddings.create({
     model: 'text-embedding-ada-002',
     input: text,
   });
+  console.log(`[${new Date().toISOString()}] ✅ Embedding done in ${Date.now() - start}ms`);
   return result.data[0].embedding;
 }
 
 // POST /get-suggestions
 app.post('/get-suggestions', async (req, res) => {
+  const startRequest = Date.now();
+  console.log(`\n==============================`);
+  console.log(`[${new Date().toISOString()}] 🚀 New request received`);
+  console.log(`[INPUT] nodeText: "${req.body.nodeText}"`);
+  console.log(`[INPUT] extraContext: "${req.body.extraContext}"`);
+  console.log(`[INPUT] styleGuide length: ${req.body.styleGuideText?.length || 0}`);
+
   const { nodeText, extraContext, styleGuideText } = req.body;
 
   if (!nodeText || !styleGuideText) {
@@ -52,14 +61,19 @@ app.post('/get-suggestions', async (req, res) => {
 
   try {
     // 1️⃣ Embed the node text
+    const embeddingStart = Date.now();
     const nodeEmbedding = await getEmbedding(nodeText);
+    console.log(`[${new Date().toISOString()}] ⏱️ Embedding step took ${Date.now() - embeddingStart}ms`);
 
     // 2️⃣ Query Pinecone for similar lines
+    const pineconeStart = Date.now();
+    console.log(`[${new Date().toISOString()}] 🔹 Querying Pinecone...`);
     const queryResponse = await index.query({
       vector: nodeEmbedding,
       topK: 10,
-      includeMetadata: true, // we stored "line" as metadata
+      includeMetadata: true,
     });
+    console.log(`[${new Date().toISOString()}] ✅ Pinecone query done in ${Date.now() - pineconeStart}ms`);
 
     const reuseSuggestions = queryResponse.matches
       .map(match => cleanText(match.metadata?.text))
@@ -77,6 +91,8 @@ ${styleGuideText}
     const userPrompt = `Rewrite ${nodeText} UI copy. If ${extraContext} has information use that intelligence too to provide relevant copy suggestion. 
 Give 10 concise, well-formatted rewrite options.`; 
 
+    const gptStart = Date.now();
+    console.log(`[${new Date().toISOString()}] 🔹 Sending request to OpenAI Chat (gpt-4)...`);
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
       temperature: 0.5,
@@ -85,6 +101,7 @@ Give 10 concise, well-formatted rewrite options.`;
         { role: 'user', content: userPrompt },
       ],
     });
+    console.log(`[${new Date().toISOString()}] ✅ GPT-4 response in ${Date.now() - gptStart}ms`);
 
     const newSuggestions = (completion.choices[0].message.content || '')
       .split('\n')
@@ -92,11 +109,15 @@ Give 10 concise, well-formatted rewrite options.`;
       .filter(Boolean)
       .slice(0, 10);
 
+    const totalTime = Date.now() - startRequest;
+    console.log(`[${new Date().toISOString()}] 🎉 Request completed in ${totalTime}ms`);
+    console.log(`==============================\n`);
+
     // 4️⃣ Return both reuse + new suggestions
     res.json({ reuseSuggestions, newSuggestions });
 
   } catch (error) {
-    console.error("❌ Error in /get-suggestions:", error);
+    console.error(`[${new Date().toISOString()}] ❌ Error in /get-suggestions:`, error);
     res.status(500).json({ error: 'Server error' });
   }
 });
