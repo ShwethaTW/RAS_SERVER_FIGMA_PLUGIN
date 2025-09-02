@@ -339,18 +339,18 @@ app.post('/get-suggestions', async (req, res) => {
     // 3️⃣ Get new suggestions from OpenAI
     const systemPrompt = `You are a product copywriting assistant for Kissflow.
 
-Follow the complete style guide below. Every output MUST comply with all writing rules.
+Every output MUST comply with all style guide below.
 
 === STYLE GUIDE ===
 ${STYLE_GUIDE}
 =====================`; 
 
-    const userPrompt = `Rewrite the following UI copy:
+    const userPrompt = `Suggest alternate copy for the following UI copy:
 
 "${nodeText}"
 
-If "${extraContext}" has information, use it to improve relevance. 
-Provide 10 concise, well-formatted rewrite options.`; 
+Prioritize the prompt in "${extraContext}" and keep this as superior instruction over anything else. If this is empty then give different writing options for "${nodeText}".  
+Provide 10 options.`; 
 
     const gptStart = Date.now();
     console.log(`[${new Date().toISOString()}] 🔹 Sending request to OpenAI Chat (gpt-4)...`);
